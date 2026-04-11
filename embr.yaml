@@ -3,7 +3,7 @@ platformVersion: "10"
 autoDeploy: true
 
 run:
-  port: 9999
+  port: 5000
 
 database:
   enabled: true
