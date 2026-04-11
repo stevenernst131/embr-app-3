@@ -61,14 +61,20 @@ var appVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "1.0.0";
 var envName = Environment.GetEnvironmentVariable("EMBR_ENVIRONMENT") ?? "unknown";
 
 // ===== HEALTH & STATUS =====
-app.MapGet("/health", () => Results.Ok(new
+// BUG 3: Intentional - throws divide by zero occasionally
+app.MapGet("/health", () =>
 {
-    status = "healthy",
-    version = appVersion,
-    environment = envName,
-    uptime = (DateTime.UtcNow - startTime).ToString(),
-    timestamp = DateTime.UtcNow
-}));
+    var uptime = (DateTime.UtcNow - startTime);
+    return Results.Ok(new
+    {
+        status = "healthy",
+        version = appVersion,
+        environment = envName,
+        uptime = uptime.ToString(),
+        timestamp = DateTime.UtcNow,
+        buggy_field = 100 / (uptime.Seconds % 10 == 0 ? 0 : 1)  // crashes every 10 seconds
+    });
+});
 
 app.MapGet("/", () => Results.Ok(new
 {
@@ -155,8 +161,9 @@ app.MapPost("/api/projects", async (HttpRequest req, NpgsqlConnection db) =>
     var description = body.TryGetProperty("description", out var d) ? d.GetString() : null;
 
     await db.OpenAsync();
+    // BUG 1: Intentional - wrong column name causes SQL error
     var project = await db.QueryFirstAsync(
-        "INSERT INTO projects (name, description) VALUES (@name, @description) RETURNING *",
+        "INSERT INTO projects (name, description_text) VALUES (@name, @description) RETURNING *",
         new { name, description });
 
     await db.ExecuteAsync(
@@ -303,7 +310,8 @@ app.MapGet("/api/search", async (string q, NpgsqlConnection db) =>
 {
     await db.OpenAsync();
     var pattern = $"%{q}%";
-    var projects = await db.QueryAsync("SELECT id, name, 'project' as type FROM projects WHERE name ILIKE @pattern OR description ILIKE @pattern", new { pattern });
+    // BUG 2: Intentional - missing table name causes crash
+    var projects = await db.QueryAsync("SELECT id, name, 'project' as type FROM nonexistent_table WHERE name ILIKE @pattern", new { pattern });
     var tasks = await db.QueryAsync("SELECT id, title as name, 'task' as type FROM tasks WHERE title ILIKE @pattern OR description ILIKE @pattern", new { pattern });
     return Results.Ok(new { query = q, results = projects.Concat(tasks) });
 });
