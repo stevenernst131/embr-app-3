@@ -160,7 +160,7 @@ app.MapPost("/api/projects", async (HttpRequest req, NpgsqlConnection db) =>
         new { name, description });
 
     await db.ExecuteAsync(
-        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('project', @id, 'created', @details)",
+        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('project', @id, 'created', @details::jsonb)",
         new { id = (int)project.id, details = JsonSerializer.Serialize(new { name }) });
 
     return Results.Created($"/api/projects/{project.id}", project);
@@ -228,7 +228,7 @@ app.MapPost("/api/projects/{projectId}/tasks", async (int projectId, HttpRequest
         new { projectId, title, description, priority, assignee });
 
     await db.ExecuteAsync(
-        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('task', @id, 'created', @details)",
+        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('task', @id, 'created', @details::jsonb)",
         new { id = (int)task.id, details = JsonSerializer.Serialize(new { title, projectId }) });
 
     return Results.Created($"/api/tasks/{task.id}", task);
@@ -262,7 +262,7 @@ app.MapPut("/api/tasks/{id}", async (int id, HttpRequest req, NpgsqlConnection d
     if (task == null) return Results.NotFound(new { error = "Task not found" });
 
     await db.ExecuteAsync(
-        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('task', @id, 'updated', @details)",
+        "INSERT INTO activity_log (entity_type, entity_id, action, details) VALUES ('task', @id, 'updated', @details::jsonb)",
         new { id, details = JsonSerializer.Serialize(new { fields = updates }) });
 
     return Results.Ok(task);
