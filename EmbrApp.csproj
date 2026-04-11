@@ -13,4 +13,8 @@
     <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="db\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
