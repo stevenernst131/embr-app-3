@@ -94,14 +94,14 @@ app.MapGet("/health", () =>
         version = appVersion,
         environment = envName,
         uptime = uptime.ToString(),
-        timestamp = DateTime.UtcNow,
-        buggy_field = 100 / (uptime.Seconds % 10 == 0 ? 0 : 1)  // crashes every 10 seconds
+        timestamp = DateTime.UtcNow
     });
 });
 
 app.MapGet("/", () => Results.Ok(new
 {
     app = "Embr Task Manager",
+    edition = "STAGING PREVIEW — Experimental Features Enabled",
     version = appVersion,
     environment = envName,
     docs = "/openapi/v1.json",
@@ -184,9 +184,9 @@ app.MapPost("/api/projects", async (HttpRequest req, NpgsqlConnection db) =>
     var description = body.TryGetProperty("description", out var d) ? d.GetString() : null;
 
     await db.OpenAsync();
-    // BUG 1: Intentional - wrong column name causes SQL error
+    // BUG 1: FIXED - was description_text
     var project = await db.QueryFirstAsync(
-        "INSERT INTO projects (name, description_text) VALUES (@name, @description) RETURNING *",
+        "INSERT INTO projects (name, description) VALUES (@name, @description) RETURNING *",
         new { name, description });
 
     await db.ExecuteAsync(
@@ -333,8 +333,8 @@ app.MapGet("/api/search", async (string q, NpgsqlConnection db) =>
 {
     await db.OpenAsync();
     var pattern = $"%{q}%";
-    // BUG 2: Intentional - missing table name causes crash
-    var projects = await db.QueryAsync("SELECT id, name, 'project' as type FROM nonexistent_table WHERE name ILIKE @pattern", new { pattern });
+    // BUG 2: FIXED - was nonexistent_table
+    var projects = await db.QueryAsync("SELECT id, name, 'project' as type FROM projects WHERE name ILIKE @pattern OR description ILIKE @pattern", new { pattern });
     var tasks = await db.QueryAsync("SELECT id, title as name, 'task' as type FROM tasks WHERE title ILIKE @pattern OR description ILIKE @pattern", new { pattern });
     return Results.Ok(new { query = q, results = projects.Concat(tasks) });
 });
@@ -480,5 +480,28 @@ Console.WriteLine($"📦 Environment: {envName}");
 Console.WriteLine($"🗄️  Database: {(npgsqlConnStr != null ? "configured" : "not configured")}");
 Console.WriteLine($"💾 Cache: {(redis?.IsConnected == true ? "connected" : "not connected")}");
 Console.WriteLine($"📁 Blobs: {(!string.IsNullOrEmpty(blobApiUrl) ? "configured" : "not configured")}");
+
+// === STAGING-ONLY: Experimental Analytics ===
+app.MapGet("/api/experimental/analytics", async (NpgsqlConnection db) =>
+{
+    await db.OpenAsync();
+    var tasksByPriority = await db.QueryAsync(@"
+        SELECT priority, COUNT(*) as count, 
+               ROUND(COUNT(*)::numeric / GREATEST((SELECT COUNT(*) FROM tasks), 1) * 100, 1) as percentage
+        FROM tasks GROUP BY priority ORDER BY count DESC");
+    var tasksByStatus = await db.QueryAsync(@"
+        SELECT status, COUNT(*) as count FROM tasks GROUP BY status ORDER BY count DESC");
+    var topContributors = await db.QueryAsync(@"
+        SELECT assignee, COUNT(*) as task_count FROM tasks WHERE assignee IS NOT NULL 
+        GROUP BY assignee ORDER BY task_count DESC LIMIT 5");
+    var commentActivity = await db.QueryAsync(@"
+        SELECT author, COUNT(*) as comment_count FROM comments 
+        GROUP BY author ORDER BY comment_count DESC LIMIT 5");
+    return Results.Ok(new
+    {
+        feature = "EXPERIMENTAL — Staging Only",
+        analytics = new { tasksByPriority, tasksByStatus, topContributors, commentActivity }
+    });
+});
 
 app.Run();
