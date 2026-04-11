@@ -1,4 +1,5 @@
 -- Embr App 3: Task Management Platform Schema
+-- Use IF NOT EXISTS to be idempotent
 
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
@@ -18,7 +19,6 @@ CREATE TABLE IF NOT EXISTS tasks (
     priority VARCHAR(20) DEFAULT 'medium',
     assignee VARCHAR(100),
     due_date TIMESTAMP,
-    tags TEXT[],
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -53,7 +53,5 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
 CREATE INDEX IF NOT EXISTS idx_comments_task ON comments(task_id);
-CREATE INDEX IF NOT EXISTS idx_attachments_task ON attachments(task_id);
 CREATE INDEX IF NOT EXISTS idx_activity_entity ON activity_log(entity_type, entity_id);
