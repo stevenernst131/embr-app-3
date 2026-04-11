@@ -49,12 +49,35 @@ if (!string.IsNullOrEmpty(cacheUrl))
     }
 }
 
-// Blob storage config
-var blobApiUrl = Environment.GetEnvironmentVariable("BLOB_STORE_URL");
-var blobApiKey = Environment.GetEnvironmentVariable("BLOB_STORE_API_KEY");
+// Blob storage config — try multiple env var names
+var blobApiUrl = Environment.GetEnvironmentVariable("BLOB_STORE_URL") 
+    ?? Environment.GetEnvironmentVariable("BLOB_URL")
+    ?? Environment.GetEnvironmentVariable("EMBR_BLOB_URL");
+var blobApiKey = Environment.GetEnvironmentVariable("BLOB_STORE_API_KEY") 
+    ?? Environment.GetEnvironmentVariable("BLOB_API_KEY")
+    ?? Environment.GetEnvironmentVariable("EMBR_BLOB_API_KEY");
 
 var app = builder.Build();
 app.MapOpenApi();
+
+// Debug endpoint to discover env vars
+app.MapGet("/debug/env", () =>
+{
+    var relevant = Environment.GetEnvironmentVariables()
+        .Cast<System.Collections.DictionaryEntry>()
+        .Where(e => {
+            var k = e.Key.ToString()!.ToUpper();
+            return k.Contains("BLOB") || k.Contains("DATABASE") || k.Contains("CACHE") 
+                || k.Contains("PORT") || k.Contains("EMBR") || k.Contains("APP_");
+        })
+        .OrderBy(e => e.Key.ToString())
+        .ToDictionary(
+            e => e.Key.ToString()!,
+            e => e.Key.ToString()!.Contains("PASSWORD") || e.Key.ToString()!.Contains("SECRET") || e.Key.ToString()!.Contains("KEY")
+                ? "***REDACTED***" : e.Value?.ToString()
+        );
+    return Results.Ok(relevant);
+});
 
 var startTime = DateTime.UtcNow;
 var appVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "1.0.0";
@@ -372,6 +395,20 @@ app.MapPost("/api/blobs/upload", async (HttpRequest req) =>
     var resp = await http.PutAsync($"{blobApiUrl}/blobs/{key}", payload);
     var result = await resp.Content.ReadAsStringAsync();
     return Results.Ok(new { uploaded = resp.IsSuccessStatusCode, key, response = result });
+});
+
+app.MapGet("/api/blobs/download/{key}", async (string key) =>
+{
+    if (string.IsNullOrEmpty(blobApiUrl) || string.IsNullOrEmpty(blobApiKey))
+        return Results.BadRequest(new { error = "Blob storage not configured" });
+
+    using var http = new HttpClient();
+    http.DefaultRequestHeaders.Add("x-api-key", blobApiKey);
+    var resp = await http.GetAsync($"{blobApiUrl}/blobs/{key}");
+    if (!resp.IsSuccessStatusCode)
+        return Results.NotFound(new { error = "Blob not found", key, statusCode = (int)resp.StatusCode });
+    var content = await resp.Content.ReadAsStringAsync();
+    return Results.Ok(new { key, content, contentType = resp.Content.Headers.ContentType?.ToString() });
 });
 
 // ===== DASHBOARD =====
