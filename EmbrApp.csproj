@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
+    <PackageReference Include="ThisPackage.Does.Not.Exist.AtAll" Version="99.99.99" />
   </ItemGroup>
 
   <ItemGroup>
