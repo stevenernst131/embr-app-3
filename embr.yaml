@@ -1,21 +1,23 @@
+version: 1
 platform: dotnet
 platformVersion: "10"
 autoDeploy: true
-
 run:
   port: 5000
-
-database:
-  enabled: true
-  engine: postgres
-  framework: raw
-  schema: db/schema.sql
-
+dependencies:
+  app-database:
+    type: postgres
+    description: "Primary application PostgreSQL database"
+    required: true
+    provides:
+      - name: DATABASE_URL
+        secret: true
+        scope: runtime
+    postgres:
+      framework: raw
 cache:
   enabled: true
-
 blobs:
   enabled: true
-
 healthCheck:
   path: /health
