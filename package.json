@@ -1,0 +1,17 @@
+{
+  "name": "embr-sample-nextjs-separate-api",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "services/api"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace web && npm run build --workspace api",
+    "dev:web": "npm run dev --workspace web",
+    "dev:api": "npm run dev --workspace api",
+    "start:web": "npm start --workspace web",
+    "start:api": "npm start --workspace api"
+  }
+}
+

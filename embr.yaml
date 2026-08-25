@@ -1,23 +1,19 @@
-version: 1
-platform: dotnet
-platformVersion: "10"
-autoDeploy: true
-run:
-  port: 5000
-dependencies:
-  app-database:
-    type: postgres
-    description: "Primary application PostgreSQL database"
-    required: true
-    provides:
-      - name: DATABASE_URL
-        secret: true
-        scope: runtime
-    postgres:
-      framework: raw
-cache:
-  enabled: true
-blobs:
-  enabled: true
-healthCheck:
-  path: /health
+components:
+  - name: web
+    rootDirectory: web
+    role: web
+    path: /
+    run:
+      port: 3000
+      start: node server.js
+      healthCheckPath: /
+
+  - name: api
+    rootDirectory: services/api
+    role: web
+    platform: nodejs
+    path: /api
+    run:
+      port: 8080
+      start: npm start
+      healthCheckPath: /api/health
