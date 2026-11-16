@@ -9,4 +9,4 @@ components:
       port: 8080
       start: node server.mjs
       healthCheckPath: /health
-      healthCheckStatusCodes: [200]
+      healthCheckStatusCodes: [200, 204]
