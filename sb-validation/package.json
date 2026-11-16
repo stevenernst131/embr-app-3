@@ -1,0 +1,13 @@
+{
+  "name": "builder-servicebus-validation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs" },
+  "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@azure/service-bus": "^7.9.5",
+    "express": "^5.1.0"
+  },
+  "engines": { "node": ">=22" }
+}
