@@ -4,11 +4,15 @@ import { ServiceBusClient } from '@azure/service-bus';
 import { randomUUID } from 'node:crypto';
 
 const app = express();
-const namespace = process.env.SERVICEBUS_NAMESPACE;
-const queue = process.env.SERVICEBUS_QUEUE || 'validation';
+const namespace = process.env.SERVICE_BUS_NAMESPACE;
+const queue = process.env.SERVICE_BUS_ENTITY_NAME || 'validation';
+const identityClientId = process.env.Identity_embrapp3val_uami_161126_ClientId;
+const credential = identityClientId
+  ? new ManagedIdentityCredential(identityClientId)
+  : new ManagedIdentityCredential();
 const log = (event, details = {}) => console.log(JSON.stringify({ time: new Date().toISOString(), event, ...details }));
 const logError = (event, error, details = {}) => console.error(JSON.stringify({ time: new Date().toISOString(), event, ...details, error: { name: error.name, code: error.code, message: error.message } }));
-const client = namespace ? new ServiceBusClient(namespace, new ManagedIdentityCredential()) : null;
+const client = namespace ? new ServiceBusClient(namespace, credential) : null;
 app.use((req, res, next) => {
   const started = Date.now();
   res.on('finish', () => log('http.request', { method: req.method, path: req.path, status: res.statusCode, durationMs: Date.now() - started }));
@@ -45,4 +49,4 @@ app.get('/messages/peek', async (_req, res) => {
   } finally { await receiver.close().catch(error => logError('servicebus.receiver.close.failure', error)); }
 });
 const port = Number(process.env.PORT || 8080);
-app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', iteration: 2 }));
+app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', identity: identityClientId ? 'user-assigned' : 'system-assigned', iteration: 2 }));
