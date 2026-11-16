@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   next();
 });
 app.get('/health', (_req, res) => res.status(200).send('OK'));
-app.get('/', (_req, res) => res.json({ app: 'embr-app-3-val', endpoints: ['GET /health', 'POST /messages', 'GET /messages/peek'], iteration: 4 }));
+app.get('/', (_req, res) => res.json({ app: 'embr-app-3-val', endpoints: ['GET /health', 'POST /messages', 'GET /messages/peek'], iteration: 5 }));
 app.post('/messages', async (_req, res) => {
   if (!client) return res.status(503).json({ error: 'Service Bus namespace not configured' });
   const messageId = randomUUID();
@@ -51,7 +51,7 @@ app.get('/messages/peek', async (_req, res) => {
   } finally { await receiver.close().catch(error => logError('servicebus.receiver.close.failure', error)); }
 });
 const instance = process.env.ADC_INSTANCE_ID || randomUUID();
-const release = 'hunt-v4';
+const release = 'hunt-v5';
 app.get('/validation/state', (_req, res) => res.json({ release, instance, marker: process.env.HUNT_MARKER || null, duration: ms('2s'), uptime: process.uptime() }));
 app.get('/validation/delay', async (req, res) => {
   const delay = Math.min(10000, Math.max(0, Number(req.query.ms) || 1000));
@@ -70,4 +70,4 @@ app.get('/validation/log', (req, res) => {
 setInterval(() => log('validation.heartbeat', { release, instance, marker: process.env.HUNT_MARKER || null }), 4000).unref();
 if (process.env.VALIDATION_STARTUP_MODE === 'crash') throw new Error('HUNT_CONTROLLED_STARTUP_CRASH');
 const port = process.env.VALIDATION_STARTUP_MODE === 'wrongport' ? 9999 : Number(process.env.PORT || 8080);
-app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', identity: identityClientId ? 'user-assigned' : 'system-assigned', iteration: 4 }));
+app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', identity: identityClientId ? 'user-assigned' : 'system-assigned', iteration: 5 }));

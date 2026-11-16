@@ -26,3 +26,4 @@ The assigned UAMI client ID is preferred when exported by Builder; otherwise SAM
 `GET /validation/delay?ms=1000` and `/validation/log?size=30&partial=true` support bounded replica/log testing.
 A heartbeat is written every four seconds. For controlled startup tests only, set
 `VALIDATION_STARTUP_MODE=crash` or `wrongport`; remove it before the recovery deployment.
+The build fails intentionally only when HUNT_FAIL_BUILD=1; remove that test variable before recovery.
