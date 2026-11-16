@@ -15,7 +15,7 @@ app.use((req, res, next) => {
   next();
 });
 app.get('/health', (_req, res) => res.status(200).send('OK'));
-app.get('/', (_req, res) => res.json({ app: 'embr-app-3-val', endpoints: ['GET /health', 'POST /messages', 'GET /messages/peek'], iteration: 1 }));
+app.get('/', (_req, res) => res.json({ app: 'embr-app-3-val', endpoints: ['GET /health', 'POST /messages', 'GET /messages/peek'], iteration: 2 }));
 app.post('/messages', async (_req, res) => {
   if (!client) return res.status(503).json({ error: 'Service Bus namespace not configured' });
   const messageId = randomUUID();
@@ -45,4 +45,4 @@ app.get('/messages/peek', async (_req, res) => {
   } finally { await receiver.close().catch(error => logError('servicebus.receiver.close.failure', error)); }
 });
 const port = Number(process.env.PORT || 8080);
-app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', iteration: 1 }));
+app.listen(port, '0.0.0.0', () => log('app.started', { port, namespaceConfigured: Boolean(namespace), queue, credential: 'ManagedIdentityCredential', iteration: 2 }));
